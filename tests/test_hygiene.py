@@ -140,17 +140,20 @@ class RepositoryHygieneTests(PyCspCageTestCase):
         self.assertNotIn(EM_DASH, log)
         self.assertNotIn(EN_DASH, log)
 
-    def test_single_clean_commit_identity_when_committed(self):
+    def test_every_commit_has_clean_identity_when_committed(self):
         probe = subprocess.run(["git", "rev-parse", "--verify", "HEAD"], cwd=str(ROOT), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         if probe.returncode != 0:
             self.skipTest("initial commit is created after local verification")
-        count = subprocess.check_output(["git", "rev-list", "--count", "HEAD"], cwd=str(ROOT), text=True).strip()
-        self.assertEqual(count, "1")
-        header = subprocess.check_output(["git", "log", "-1", "--format=%an%x00%ae%x00%cn%x00%ce"], cwd=str(ROOT), text=True).strip().split("\x00")
-        self.assertEqual(header[0], "draarivpatel-ui")
-        self.assertEqual(header[1], "287273626+draarivpatel-ui@users.noreply.github.com")
-        self.assertEqual(header[2], "draarivpatel-ui")
-        self.assertEqual(header[3], "287273626+draarivpatel-ui@users.noreply.github.com")
+        count = int(subprocess.check_output(["git", "rev-list", "--count", "HEAD"], cwd=str(ROOT), text=True).strip())
+        self.assertGreaterEqual(count, 1)
+        rows = subprocess.check_output(["git", "log", "--format=%an%x00%ae%x00%cn%x00%ce%x00"], cwd=str(ROOT), text=True).split("\x00")
+        self.assertEqual(len(rows), count * 4 + 1)
+        for index in range(count):
+            base = index * 4
+            self.assertEqual(rows[base].lstrip("\n"), "draarivpatel-ui")
+            self.assertEqual(rows[base + 1], "287273626+draarivpatel-ui@users.noreply.github.com")
+            self.assertEqual(rows[base + 2], "draarivpatel-ui")
+            self.assertEqual(rows[base + 3], "287273626+draarivpatel-ui@users.noreply.github.com")
 
 
 class PackagingMetadataTests(PyCspCageTestCase):

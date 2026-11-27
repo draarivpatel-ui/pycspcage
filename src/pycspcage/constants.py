@@ -188,6 +188,7 @@ SCRIPT_GADGET_HOSTS = (
     "firebaseapp.com",
     "amazonaws.com",
     "cloudfront.net",
+    "jsdelivr.net",
     "cdn.jsdelivr.net",
     "unpkg.com",
     "cdnjs.cloudflare.com",

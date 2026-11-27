@@ -93,7 +93,7 @@ Detected classes include:
 - Missing or weak `frame-ancestors` clickjacking protection.
 - Missing `form-action` navigation protection.
 - Wildcards, broad `https:` scheme sources, insecure HTTP, `data:`, `blob:`, `filesystem:`, wildcard ports, and executable schemes in critical directives.
-- JSONP, AngularJS, and CDN script-gadget hosts such as Google-hosted libraries, jsDelivr, unpkg, cdnjs, raw GitHub content, cloud storage, and CDN wildcard hosts when they are not pinned by exact path, hash, or `'strict-dynamic'`.
+- JSONP, AngularJS, and CDN script-gadget hosts such as Google-hosted libraries, jsDelivr, unpkg, cdnjs, raw GitHub content, cloud storage, and CDN wildcard hosts when they are not neutralized by `'strict-dynamic'`.
 - Nonces below 128 bits of decoded entropy, malformed nonce encodings, repeated nonces, predictable placeholders, constant byte sequences, ascending or descending byte sequences, and repeating byte pairs.
 - SHA-1, MD5, malformed base64 digests, and wrong digest lengths for SHA-256, SHA-384, and SHA-512.
 - Legacy `report-uri` use, non-HTTPS reporting endpoints, credential-bearing endpoints, loopback or private-network reporting targets, protocol-relative endpoints, and broad reporting paths.

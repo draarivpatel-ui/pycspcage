@@ -246,9 +246,10 @@ class NegativeAuditorTests(PyCspCageTestCase):
         report = audit_csp(policy_with_script("'nonce-" + nonce + "' 'strict-dynamic' https://cdn.jsdelivr.net"))
         self.assertNoFinding(report, "CDN_SCRIPT_GADGET_HOST")
 
-    def test_valid_hash_suppresses_cdn_gadget_finding(self):
+    def test_valid_hash_does_not_suppress_live_cdn_host(self):
         report = audit_csp(policy_with_script("'" + valid_hash("sha256") + "' https://unpkg.com"))
-        self.assertNoFinding(report, "CDN_SCRIPT_GADGET_HOST")
+        self.assertFinding(report, "CDN_SCRIPT_GADGET_HOST")
+        self.assertFalse(report.safe)
 
     def test_csp3_unsafe_inline_shadowing_is_warning(self):
         nonce = strong_nonce(23)

@@ -356,7 +356,13 @@ def _parse_csp_internal(input_value: Union[str, Sequence[str]], options: Optiona
     policies: List[Policy] = []
     total_directives = 0
 
+    policy_limit_hit = False
     for header_index, header in enumerate(headers):
+        if policy_limit_hit:
+            break
+        if len(header) > int(resolved["max_bytes"]):
+            state.error(CSPCAGE_ERROR_CODES["INPUT_TOO_LARGE"], "CSP header exceeds the configured byte bound", {"policy_index": header_index})
+            continue
         try:
             scan_header_characters(header, header_index)
         except CspCageError as error:
@@ -369,6 +375,7 @@ def _parse_csp_internal(input_value: Union[str, Sequence[str]], options: Optiona
         for piece_index, piece in enumerate(pieces):
             if len(policies) >= int(resolved["max_policies"]):
                 state.error(CSPCAGE_ERROR_CODES["TOO_MANY_POLICIES"], "too many comma-separated CSP policies")
+                policy_limit_hit = True
                 break
             if piece.strip() == "":
                 state.error(CSPCAGE_ERROR_CODES["EMPTY_POLICY"], "empty policy in comma-separated header list", {"policy_index": len(policies)})

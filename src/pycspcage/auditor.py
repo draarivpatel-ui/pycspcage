@@ -44,9 +44,7 @@ DEDUCTIONS = {
 
 
 def _add(findings: List[AuditFinding], max_findings: int, severity: str, code: str, message: str, policy_index: Optional[int] = None, directive: Optional[str] = None, recommendation: Optional[str] = None, details: Optional[Mapping[str, Any]] = None) -> None:
-    if len(findings) >= max_findings:
-        return
-    findings.append(AuditFinding(
+    item = AuditFinding(
         severity=severity,
         code=code,
         message=message,
@@ -54,7 +52,16 @@ def _add(findings: List[AuditFinding], max_findings: int, severity: str, code: s
         directive=directive,
         recommendation=recommendation,
         details=MappingProxyType(dict(details or {})),
-    ))
+    )
+    if len(findings) < max_findings:
+        findings.append(item)
+        return
+    if severity != ERROR:
+        return
+    for index in range(len(findings) - 1, -1, -1):
+        if findings[index].severity != ERROR:
+            findings[index] = item
+            return
 
 
 def _directive(policy: Policy, name: str) -> Optional[Directive]:
@@ -184,16 +191,26 @@ def _analyze_critical_sources(policy: Policy, item: Directive, findings: List[Au
                 _add(findings, max_findings, severity, "WILDCARD_PORT_SOURCE", "a wildcard port broadens the origin beyond a single HTTPS service", recommendation="Pin the expected HTTPS port or omit the port for the scheme default.", **context)
 
 
+def _cdn_path_is_known_gadget(path: str) -> bool:
+    lower = path.lower()
+    return any(marker in lower for marker in ("angular", "angularjs", "jsonp", "callback"))
+
+
 def _analyze_cdn_gadgets(policy: Policy, findings: List[AuditFinding], max_findings: int) -> None:
     for item in _script_relevant_directives(policy):
-        if _has_keyword(item, "strict-dynamic") or _has_valid_hash(item):
+        if _has_keyword(item, "strict-dynamic"):
             continue
         for source in item.sources:
-            if source.kind != "host" or source.has_exact_path:
+            if source.kind != "host":
+                continue
+            if source.has_exact_path and not _cdn_path_is_known_gadget(source.path):
                 continue
             matched = _script_gadget_match(source.host)
             if matched is not None:
-                _add(findings, max_findings, ERROR, "CDN_SCRIPT_GADGET_HOST", str(source.host) + " is a known JSONP, AngularJS, or CDN script-gadget bypass host", policy_index=policy.index, directive=item.name, recommendation="Use strict-dynamic with a strong nonce or hash, or pin an exact versioned path.", details={"gadget_host": matched})
+                detail = str(source.host) + " is a known JSONP, AngularJS, or CDN script-gadget bypass host"
+                if source.has_exact_path:
+                    detail = str(source.host) + str(source.path) + " pins a known executable CDN gadget path"
+                _add(findings, max_findings, ERROR, "CDN_SCRIPT_GADGET_HOST", detail, policy_index=policy.index, directive=item.name, recommendation="Use strict-dynamic with a strong nonce or hash; do not rely on a live CDN host allowlist.", details={"gadget_host": matched})
 
 
 def _analyze_framework_gaps(policy: Policy, findings: List[AuditFinding], max_findings: int) -> None:
@@ -320,7 +337,7 @@ def _parse_whatwg_ipv4(host: str):
 
 
 def _private_or_loopback_host(host: str) -> bool:
-    lower = host.lower().strip("[]")
+    lower = host.lower().strip("[]").rstrip(".")
     if lower == "localhost" or lower.endswith(".localhost") or lower.endswith(".local") or lower.endswith(".internal"):
         return True
     try:
@@ -339,7 +356,6 @@ def _analyze_one_endpoint(token: str, policy: Policy, directive_name: str, findi
     context = {"policy_index": policy.index, "directive": directive_name}
     if token.startswith("//"):
         _add(findings, max_findings, WARNING, "REPORT_ENDPOINT_PROTOCOL_RELATIVE", "protocol-relative reporting endpoints can leak reports over plaintext HTTP", recommendation="Use an explicit HTTPS endpoint.", **context)
-        return
     try:
         parsed = urlsplit(token)
     except ValueError:

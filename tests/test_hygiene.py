@@ -191,7 +191,7 @@ class PackagingMetadataTests(PyCspCageTestCase):
         self.assertIn("id-token: write", text)
         self.assertIn("environment:", text)
         self.assertIn("name: pypi", text)
-        self.assertIn("pypa/gh-action-pypi-publish@release/v1", text)
+        self.assertRegex(text, r"pypa/gh-action-pypi-publish@[0-9a-f]{40}\b")
         self.assertNotIn("password:", text)
         self.assertNotIn("PYPI_TOKEN", text)
         self.assertNotIn("workflow_dispatch", text)

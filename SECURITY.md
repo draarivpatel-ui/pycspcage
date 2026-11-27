@@ -6,6 +6,10 @@ The latest published 1.x release is supported. Security fixes are applied to the
 
 ## Reporting a vulnerability
 
+Report suspected vulnerabilities privately through GitHub Security Advisories:
+
+https://github.com/draarivpatel-ui/pycspcage/security/advisories/new
+
 Do not open a public issue with exploit details, proof-of-concept payloads, or unredacted application headers. Report suspected vulnerabilities privately through the repository owner's GitHub security advisory flow when available. If advisory flow is unavailable, open a minimal public issue asking for a private contact route and do not include the payload.
 
 Include this information when it is safe to share:

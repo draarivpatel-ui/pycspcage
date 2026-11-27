@@ -43,11 +43,11 @@ class _ParseState:
         self.add(CspCageError(code, detail, context))
 
 
-def _normalize_input(input_value: Union[str, Sequence[str]]) -> List[str]:
+def _normalize_input(input_value: Union[str, Sequence[str]]) -> Sequence[str]:
     if isinstance(input_value, str):
-        return [input_value]
-    if isinstance(input_value, (list, tuple)) and len(input_value) > 0 and all(isinstance(item, str) for item in input_value):
-        return list(input_value)
+        return (input_value,)
+    if isinstance(input_value, (list, tuple)) and len(input_value) > 0:
+        return input_value
     raise CspCageError(
         CSPCAGE_ERROR_CODES["INVALID_INPUT"],
         "CSP input must be a string or a non-empty sequence of strings",
@@ -358,8 +358,13 @@ def _parse_csp_internal(input_value: Union[str, Sequence[str]], options: Optiona
 
     policy_limit_hit = False
     for header_index, header in enumerate(headers):
-        if policy_limit_hit:
+        if policy_limit_hit or len(state.errors) >= int(resolved["max_findings"]):
             break
+        if not isinstance(header, str):
+            raise CspCageError(
+                CSPCAGE_ERROR_CODES["INVALID_INPUT"],
+                "CSP input must be a string or a non-empty sequence of strings",
+            )
         if len(header) > int(resolved["max_bytes"]):
             state.error(CSPCAGE_ERROR_CODES["INPUT_TOO_LARGE"], "CSP header exceeds the configured byte bound", {"policy_index": header_index})
             continue

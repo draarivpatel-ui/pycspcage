@@ -81,6 +81,20 @@ class RedTeamRegressionTests(PyCspCageTestCase):
         self.assertIn("CSPCAGE_TOO_MANY_POLICIES", {error.code for error in parsed.errors})
         self.assertLessEqual(len(parsed.errors), 3)
 
+    def test_error_cap_stops_consuming_trailing_header_sequence(self):
+        consumed = []
+
+        class CountingHeaders(list):
+            def __iter__(self):
+                for item in super().__iter__():
+                    consumed.append(item)
+                    yield item
+
+        headers = CountingHeaders(["bad\x00header"] * 1000)
+        parsed = parse_csp(headers, {"strict": False, "max_findings": 3})
+        self.assertEqual(len(parsed.errors), 3)
+        self.assertLessEqual(len(consumed), 4)
+
     def test_short_nonce_still_critical(self):
         report = audit_csp(script_policy("'nonce-" + b64(b"x" * 15) + "'"))
         self.assertFinding(report, "WEAK_NONCE_ENTROPY")

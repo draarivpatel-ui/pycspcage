@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pycspcage"
+version = "1.0.0"
+description = "Zero-dependency CSP Level 3 firewall, XSS-bypass auditor, nonce and hash guard, and safe header builder"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "draarivpatel-ui contributors" }]
+keywords = [
+    "content-security-policy",
+    "csp",
+    "csp-level-3",
+    "firewall",
+    "nonce",
+    "security",
+    "strict-dynamic",
+    "xss",
+    "xss-prevention",
+    "zero-dependency",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Internet :: WWW/HTTP",
+    "Topic :: Security",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
+]
+dependencies = []
+
+[project.scripts]
+pycspcage = "pycspcage.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/draarivpatel-ui/pycspcage"
+Repository = "https://github.com/draarivpatel-ui/pycspcage"
+Issues = "https://github.com/draarivpatel-ui/pycspcage/issues"
+Documentation = "https://github.com/draarivpatel-ui/pycspcage#readme"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["pycspcage*"]
+exclude = ["tests*"]
+
+[tool.setuptools.package-data]
+pycspcage = ["py.typed"]

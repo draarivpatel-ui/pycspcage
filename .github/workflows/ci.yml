@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Run unit tests
+        run: PYTHONPATH=src python3 -m unittest discover -s tests -v
+      - name: Run examples
+        run: |
+          PYTHONPATH=src python3 examples/basic_strict_policy.py
+          PYTHONPATH=src python3 examples/audit_real_world_policy.py
+          PYTHONPATH=src python3 examples/merge_and_hash_gate.py
+      - name: Run CLI smoke tests
+        run: |
+          PYTHONPATH=src python3 -m pycspcage parse "default-src 'self'" --json
+          PYTHONPATH=src python3 -m pycspcage audit "default-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'" --json
+          PYTHONPATH=src python3 -m pycspcage strict
+          PYTHONPATH=src python3 -m pycspcage nonce 16
+          PYTHONPATH=src python3 -m pycspcage hash "console.log(1)" --algorithm sha256
+          PYTHONPATH=src python3 -m pycspcage --version
+          if PYTHONPATH=src python3 -m pycspcage audit "script-src 'unsafe-inline'" --json; then
+            echo 'unsafe inline unexpectedly passed' >&2
+            exit 1
+          else
+            code=$?
+            if [ "$code" -ne 1 ]; then
+              echo "expected audit exit 1, got $code" >&2
+              exit 1
+            fi
+          fi
+      - name: Install build tooling
+        run: python3 -m pip install build
+      - name: Build source and wheel distributions
+        run: python3 -m build
+      - name: Verify distribution contents
+        run: python3 scripts/check_dist.py dist
